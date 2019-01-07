@@ -7,18 +7,18 @@ import math
 
 # env parameters
 map_margin = 2
-max_velocity = 0.5
+max_velocity = 1
 init_velocity = 0.05
-num_particle = 10
+num_particle = 15
 num_one_side_neighbor = 2
 
 # Velocity update parameters
 # c0 = 0.65  # inertia coefficient
 # c1 = 3.7  # personal_best coefficient
 # c2 = 0.3  # local_best coefficient
-c0 = 0.5  # inertia coefficient
+c0 = 0.7  # inertia coefficient
 c1 = 2.5  # personal_best coefficient
-c2 = 1.5  # local_best coefficient
+c2 = 1.0  # local_best coefficient
 
 # Target function parameters.
 x0 = 0.2
@@ -89,9 +89,9 @@ class Particle:
 # Target function.
 def eval_fitness(x, y):
     return \
-        math.exp(-((x - x0)**2 + (y - y0)**2) / r**2) \
-      * math.sin(a*x)**2 \
-      * math.sin(b*x + c*y + d*x**2)**2
+        np.exp(-((x - x0)**2 + (y - y0)**2) / r**2) \
+      * np.sin(a*x)**2 \
+      * np.sin(b*x + c*y + d*x**2)**2
 
 def get_global_best(group):
     best = Position()
@@ -118,9 +118,7 @@ delta = 0.005
 x = np.arange(-map_margin, map_margin, delta)
 y = np.arange(-map_margin, map_margin, delta)
 X, Y = np.meshgrid(x, y)
-Z = np.exp(-((X - x0)**2 + (Y - y0)**2) / r**2) \
-    * np.sin(a*X)**2 \
-    * np.sin(b*X + c*Y + d*X**2)**2
+Z = eval_fitness(X, Y)
 
 fig, ax = plt.subplots()
 CS = ax.contour(X, Y, Z)
