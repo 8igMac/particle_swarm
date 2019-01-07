@@ -6,31 +6,28 @@ import random
 import math
 
 # env parameters
-margin = 4
-max_velocity = 0.01
-num_particle = 20
-max_episode = 30
+map_margin = 2
+max_velocity = 0.5
+init_velocity = 0.05
+num_particle = 10
+num_one_side_neighbor = 2
 
 # Velocity update parameters
+# c0 = 0.65  # inertia coefficient
+# c1 = 3.7  # personal_best coefficient
+# c2 = 0.3  # local_best coefficient
 c0 = 0.5  # inertia coefficient
-c1 = 1  # personal_best coefficient
-c2 = 0.5  # global_best coefficient
+c1 = 2.5  # personal_best coefficient
+c2 = 1.5  # local_best coefficient
 
 # Target function parameters.
-# x0 = 0.2
-# y0 = 0.3
-# r = 1
-# a = 8
-# b = 1
-# c = 5 
-# d = 2
 x0 = 0.2
 y0 = 0.3
-r = 2
+r = 1
 a = 8
-b = 8
-c = 8 
-d = 8
+b = 1
+c = 5 
+d = 2
 
 class Position:
     def __init__(self):
@@ -43,44 +40,53 @@ class Velocity:
 
 class Particle:
     def __init__(self):
-        # Init random position. 
+        # Init random position (limit on map margin).
         self.position = Position()
-        self.position.x = random.uniform(-margin, margin)
-        self.position.y = random.uniform(-margin, margin)
+        self.position.x = random.uniform(-map_margin, map_margin)
+        self.position.y = random.uniform(-map_margin, map_margin)
         self.position.fitness = eval_fitness(
                 self.position.x, self.position.y)
         # Init random velocity.
         self.velocity = Velocity()
-        self.velocity.x = random.uniform(-max_velocity, max_velocity)
-        self.velocity.y = random.uniform(-max_velocity, max_velocity)
+        self.velocity.x = random.uniform(-init_velocity, init_velocity)
+        self.velocity.y = random.uniform(-init_velocity, init_velocity)
         # Init personal best
         self.personal_best = self.position
 
     # Update position and personal best
+    # note: did not limit particles position on map margin
     def update_position(self):
         self.position.x += self.velocity.x
         self.position.y += self.velocity.y
-        # debug
-        # self.position.x += 0.01
-        # self.position.y += 0.01
         self.position.fitness = eval_fitness(
                 self.position.x, self.position.y)
         
         if self.position.fitness > self.personal_best.fitness:
             self.personal_best = self.position
 
-    # Update velocity based on personal and global best.
-    def update_velocity(self, global_best):
-        self.velocity.x = \
+    # Update velocity based on personal and local best.
+    def update_velocity(self, local_best):
+        new_vx = \
             c0*self.velocity.x \
           + c1*(self.personal_best.x - self.position.x) \
-          + c2*(global_best.x - self.position.x)
+          + c2*(local_best.x - self.position.x)
+        # Check maximun velocity bound
+        if abs(new_vx) > max_velocity:
+            self.velocity.x = new_vx/abs(new_vx) * max_velocity
+        else:
+            self.velocity.x = new_vx
 
-        self.velocity.y = \
+        new_vy = \
             c0*self.velocity.y \
           + c1*(self.personal_best.y - self.position.y) \
-          + c2*(global_best.y - self.position.y)
+          + c2*(local_best.y - self.position.y)
+        # Check maximun velocity bound
+        if abs(new_vy) > max_velocity:
+            self.velocity.y = new_vy/abs(new_vy) * max_velocity
+        else:
+            self.velocity.y = new_vy
 
+# Target function.
 def eval_fitness(x, y):
     return \
         math.exp(-((x - x0)**2 + (y - y0)**2) / r**2) \
@@ -94,15 +100,23 @@ def get_global_best(group):
             best = i.position
     return best
 
-
+# Get neighborhood best. Implement virtual circle neighborhood.
+def get_local_best(group, index):
+    best = Position()
+    for i in range(num_one_side_neighbor):
+        if group[(index + (i+1)) % len(group)].personal_best.fitness > best.fitness:
+            best = group[(index + (i+1)) % len(group)].position
+        if group[(index - (i+1)) % len(group)].personal_best.fitness > best.fitness:
+            best = group[(index - (i+1)) % len(group)].position
+    return best
 
 # Create a group of particles.
 group = [Particle() for i in range(num_particle)]
 
 # Plot background.
 delta = 0.005
-x = np.arange(-margin, margin, delta)
-y = np.arange(-margin, margin, delta)
+x = np.arange(-map_margin, map_margin, delta)
+y = np.arange(-map_margin, map_margin, delta)
 X, Y = np.meshgrid(x, y)
 Z = np.exp(-((X - x0)**2 + (Y - y0)**2) / r**2) \
     * np.sin(a*X)**2 \
@@ -118,13 +132,14 @@ x = [i.position.x for i in group]
 y = [i.position.y for i in group]
 line, = ax.plot(x, y, 'ro', markersize=4)
 
+# Run episode
 def run(episode):
     print(episode)
     for i in group:
         i.update_position()
-    global_best = get_global_best(group)
-    for i in group:
-        i.update_velocity(global_best)
+    for i, v in enumerate(group):
+        local_best = get_local_best(group, i)
+        v.update_velocity(local_best)
 
     # Update plot
     for i in range(len(group)):
@@ -134,5 +149,5 @@ def run(episode):
     line.set_data(x, y)
     return line
 
-ani = animation.FuncAnimation(fig, run, max_episode)
+ani = animation.FuncAnimation(fig, run)
 plt.show()
