@@ -3,16 +3,18 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 import random
+
 import math
 
 # env parameters
 map_margin = 10
+# max_velocity = 0.07
 max_velocity = 0.07
 num_particle = 100
 num_one_side_neighbor = 5
 
 # Velocity update parameters
-# c0 = 0.65  # inertia coefficient
+# c0 = 0.5  # inertia coefficient
 # c1 = 3.7  # personal_best coefficient
 # c2 = 0.3  # local_best coefficient
 
@@ -25,7 +27,7 @@ num_one_side_neighbor = 5
 # c1 = 2  # personal_best coefficient
 # c2 = 0.5  # local_best coefficient
 
-c0 = 1  # inertia coefficient
+c0 = 0.8  # inertia coefficient
 c1 = 2  # personal_best coefficient
 c2 = 2  # local_best coefficient
 
@@ -104,11 +106,11 @@ def eval_fitness(x, y):
     #   * np.sin(b*x + c*y + d*x**2)**2
 
     # Some tuning of origin function
-    return \
-        np.exp(-((x - x0)**2 + (y - y0)**2) / r**2) \
-      * np.sin(a*x)**2 \
-      * np.sin(b*x)**2 \
-      * np.sin(b*x + c*y**2 + d*x**3)**8
+    # return \
+    #     np.exp(-((x - x0)**2 + (y - y0)**2) / r**2) \
+    #   * np.sin(a*x)**2 \
+    #   * np.sin(b*x)**2 \
+    #   * np.sin(b*x + c*y**2 + d*x**3)**8
 
     # Rastrigin function
     # return -( \
@@ -123,11 +125,11 @@ def eval_fitness(x, y):
     #   * np.exp(-((x-math.pi)**2 + (y-math.pi)**2)) \
     # )
 
-    # Tree-hump camel function
-    # return 0.0001 * ( np.abs(\
-    #     np.sin(x) * np.sin(y) * np.exp(np.abs(\
-    #         100 - np.sqrt(x**2 + y**2)/math.pi))\
-    #     ) + 1) ** 0.1
+    # Cross-in-tray function
+    return 0.0001 * ( np.abs(\
+        np.sin(x) * np.sin(y) * np.exp(np.abs(\
+            100 - np.sqrt(x**2 + y**2)/math.pi))\
+        ) + 1) ** 0.1
 
 
 def get_global_best(group):
@@ -184,5 +186,11 @@ def run(episode):
     line.set_data(x, y)
     return line
 
+# Set up formatting for the movie files
+Writer = animation.writers['ffmpeg']
+writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
+
 ani = animation.FuncAnimation(fig, run)
+# ani = animation.FuncAnimation(fig, run, 150, repeat=False)
+# ani.save('best_tree_hump.mp4', writer=writer)
 plt.show()
