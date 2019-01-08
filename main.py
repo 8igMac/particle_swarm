@@ -7,18 +7,24 @@ import math
 
 # env parameters
 map_margin = 2
-max_velocity = 1
+max_velocity = 0.5
 init_velocity = 0.05
-num_particle = 15
+num_particle = 30
 num_one_side_neighbor = 2
 
 # Velocity update parameters
 # c0 = 0.65  # inertia coefficient
 # c1 = 3.7  # personal_best coefficient
 # c2 = 0.3  # local_best coefficient
-c0 = 0.7  # inertia coefficient
-c1 = 2.5  # personal_best coefficient
-c2 = 1.0  # local_best coefficient
+
+# slow convergence
+# c0 = 0.8  # inertia coefficient
+# c1 = 3.3  # personal_best coefficient
+# c2 = 0.7  # local_best coefficient
+
+c0 = 0.4  # inertia coefficient
+c1 = 0.2  # personal_best coefficient
+c2 = 0.8  # local_best coefficient
 
 # Target function parameters.
 x0 = 0.2
@@ -88,10 +94,15 @@ class Particle:
 
 # Target function.
 def eval_fitness(x, y):
+    # return \
+    #     np.exp(-((x - x0)**2 + (y - y0)**2) / r**2) \
+    #   * np.sin(a*x)**2 \
+    #   * np.sin(b*x + c*y + d*x**2)**2
     return \
         np.exp(-((x - x0)**2 + (y - y0)**2) / r**2) \
       * np.sin(a*x)**2 \
-      * np.sin(b*x + c*y + d*x**2)**2
+      * np.sin(b*x)**2 \
+      * np.sin(b*x + c*y**2 + d*x**3)**8
 
 def get_global_best(group):
     best = Position()
