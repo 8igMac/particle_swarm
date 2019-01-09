@@ -7,29 +7,15 @@ import random
 import math
 
 # env parameters
-map_margin = 10
-# max_velocity = 0.07
+map_margin = 2
 max_velocity = 0.07
-num_particle = 100
-num_one_side_neighbor = 5
+num_particle = 50
+num_one_side_neighbor = 3
 
 # Velocity update parameters
-# c0 = 0.5  # inertia coefficient
-# c1 = 3.7  # personal_best coefficient
-# c2 = 0.3  # local_best coefficient
-
-# slow convergence
-# c0 = 0.8  # inertia coefficient
-# c1 = 3.3  # personal_best coefficient
-# c2 = 0.7  # local_best coefficient
-
-# c0 = 0.8  # inertia coefficient
-# c1 = 2  # personal_best coefficient
-# c2 = 0.5  # local_best coefficient
-
 c0 = 0.8  # inertia coefficient
-c1 = 2  # personal_best coefficient
-c2 = 2  # local_best coefficient
+c1 = 0.5  # personal_best coefficient
+c2 = 3.5  # local_best coefficient
 
 # Target function parameters.
 x0 = 0.2
@@ -39,6 +25,9 @@ a = 8
 b = 1
 c = 5 
 d = 2
+
+# Test parameters
+fitness_threashold = 0.99830 * 0.9  # orginal function
 
 class Position:
     def __init__(self):
@@ -100,10 +89,10 @@ class Particle:
 # Target function.
 def eval_fitness(x, y):
     # Origin function in the spec
-    # return \
-    #     np.exp(-((x - x0)**2 + (y - y0)**2) / r**2) \
-    #   * np.sin(a*x)**2 \
-    #   * np.sin(b*x + c*y + d*x**2)**2
+    return \
+        np.exp(-((x - x0)**2 + (y - y0)**2) / r**2) \
+      * np.sin(a*x)**2 \
+      * np.sin(b*x + c*y + d*x**2)**2
 
     # Some tuning of origin function
     # return \
@@ -126,10 +115,10 @@ def eval_fitness(x, y):
     # )
 
     # Cross-in-tray function
-    return 0.0001 * ( np.abs(\
-        np.sin(x) * np.sin(y) * np.exp(np.abs(\
-            100 - np.sqrt(x**2 + y**2)/math.pi))\
-        ) + 1) ** 0.1
+    # return 0.0001 * ( np.abs(\
+    #     np.sin(x) * np.sin(y) * np.exp(np.abs(\
+    #         100 - np.sqrt(x**2 + y**2)/math.pi))\
+    #     ) + 1) ** 0.1
 
 
 def get_global_best(group):
@@ -171,7 +160,6 @@ line, = ax.plot(x, y, 'ro', markersize=4)
 
 # Run episode
 def run(episode):
-    print(episode)
     for i in group:
         i.update_position()
     for i, v in enumerate(group):
@@ -186,11 +174,32 @@ def run(episode):
     line.set_data(x, y)
     return line
 
-# Set up formatting for the movie files
-Writer = animation.writers['ffmpeg']
-writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
+# ani = animation.FuncAnimation(fig, run)
+# plt.show()
 
-ani = animation.FuncAnimation(fig, run)
+
+final_result = []
+# Run test 
+for i in range(10):
+    print(i)
+    for j in range(150):
+        run(j)
+    final_result.append(get_global_best(group).fitness)
+# Print test result
+print(f'max: {max(final_result)}')
+print(f'avg: {sum(final_result) / len(final_result)}')
+print(f'min: {min(final_result)}')
+over_case = [x for x in final_result if x >= fitness_threashold]
+print(f'over threashold({fitness_threashold}): {len(over_case)}')
+
+
+    
+
+
+# Set up formatting for the movie files
+# Writer = animation.writers['ffmpeg']
+# writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
+
+# ani = animation.FuncAnimation(fig, run)
 # ani = animation.FuncAnimation(fig, run, 150, repeat=False)
 # ani.save('best_tree_hump.mp4', writer=writer)
-plt.show()
